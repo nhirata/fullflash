@@ -82,7 +82,11 @@ adb shell rm -r /system/b2g/webapps &&
 
 echo + Installing new gaia webapps &&
 adb shell mkdir -p /system/b2g/defaults/pref &&
-adb push gaia/profile/webapps /system/b2g/webapps &&
+if adb shell cat /data/local/webapps/webapps.json | grep -qs '"basePath": "/system' ; then
+	adb push gaia/profile/webapps /system/b2g/webapps
+else
+	adb push gaia/profile/webapps /data/local/webapps
+fi
 adb push user.js /system/b2g/defaults/pref &&
 adb push gaia/profile/settings.json /system/b2g/defaults &&
 

@@ -41,8 +41,14 @@ adb wait-for-device &&
 echo + Stopping b2g &&
 adb shell stop b2g &&
 
+echo + Check how much space is taken &&
+adb shell df /system &&
+
 echo + removing old system &&
 adb shell rm -r /system/b2g &&
+
+echo + Check how much is removed afterwards &&
+adb shell df /system &&
 
 echo + Installing new b2g &&
 adb push b2g /system/b2g &&

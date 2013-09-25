@@ -41,14 +41,13 @@ adb wait-for-device &&
 echo + Stopping b2g &&
 adb shell stop b2g &&
 
+echo + removing old system &&
+adb shell rm -r /system/b2g &&
+
 echo + Installing new b2g &&
 adb push b2g /system/b2g &&
 
 echo + Done installing Gecko!
-
-echo + Uninstalling old RIL &&
-adb shell rm -r /system/b2g/distribution/bundles/libqc_b2g_location &&
-adb shell rm -r /system/b2g/distribution/bundles/libqc_b2g_ril &&
 
 if [ ! $nocomril ]
 then
@@ -56,9 +55,6 @@ echo + Installing new RIL &&
 adb push ril /system/b2g/distribution/bundles/
 echo + Done installing RIL!
 fi
-
-echo + Removing incompatible extensions &&
-adb shell rm -r /system/b2g/distribution/bundles/liblge_b2g_extension > /dev/null &&
 
 echo + Adjusting user.js &&
 if [ $rildebug ]
@@ -78,7 +74,6 @@ adb shell rm -r /data/local/permissions.sqlite* &&
 adb shell rm -r /data/local/OfflineCache &&
 adb shell rm -r /data/local/indexedDB &&
 adb shell rm -r /data/local/debug_info_trigger &&
-adb shell rm -r /system/b2g/webapps &&
 
 echo + Installing new gaia webapps &&
 adb shell mkdir -p /system/b2g/defaults/pref &&

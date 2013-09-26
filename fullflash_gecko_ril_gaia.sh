@@ -18,9 +18,13 @@ while getopts :rnh opt; do
     "
     exit
     ;;
+    d)
+    echo "deleting previous Profile"
+    deldata=1
     *)
     rildebug=0
     nocomril=0
+    deldata=0
     ;;
   esac
 done
@@ -49,6 +53,12 @@ adb shell rm -r /system/b2g &&
 
 echo + Check how much is removed afterwards &&
 adb shell df /system &&
+
+if [ $deldata]
+then
+echo + Deleting Profile data &&
+adb shell rm -r /data/b2g/mozilla
+fi
 
 echo + Installing new b2g &&
 adb push b2g /system/b2g &&

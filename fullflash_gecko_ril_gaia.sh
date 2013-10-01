@@ -12,20 +12,21 @@ while getopts :rnh opt; do
     ;;
     h) 
     echo "
+    -k : keep previous profile
     -r : to turn on ril debugging
     -n : to not install comril
     -h : for help
     "
     exit
     ;;
-    d)
-    echo "deleting previous Profile"
-    deldata=1
+    k)
+    echo "keep previous Profile"
+    keepdata=1
     ;;
     *)
     rildebug=0
     nocomril=0
-    deldata=0
+    keepdata=0
     ;;
   esac
 done
@@ -55,7 +56,7 @@ adb shell rm -r /system/b2g &&
 echo + Check how much is removed afterwards &&
 adb shell df /system &&
 
-if [ $deldata ]
+if [ ! $keepdata ]
 then
 echo + Deleting Profile data &&
 adb shell rm -r /data/b2g/mozilla &&

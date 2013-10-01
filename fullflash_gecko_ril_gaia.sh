@@ -60,7 +60,7 @@ if [ ! $keepdata ]
 then
 echo + Deleting Profile data &&
 adb shell rm -r /data/b2g/mozilla &&
-adb shell rm -r data/local/storage/persistent/*
+adb shell rm -r /data/local/storage/persistent/*
 fi
 
 echo + Installing new b2g &&

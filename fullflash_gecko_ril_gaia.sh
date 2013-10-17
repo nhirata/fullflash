@@ -89,6 +89,7 @@ adb shell rm -r /cache/* &&
 adb shell rm -r /data/b2g/* &&
 adb shell rm -r /data/local/webapps &&
 adb shell rm -r /data/local/user.js &&
+adb shell rm -r /data/local/svoperapps &&
 adb shell rm -r /data/local/permissions.sqlite* &&
 adb shell rm -r /data/local/OfflineCache &&
 adb shell rm -r /data/local/indexedDB &&

@@ -1,5 +1,11 @@
 #!/bin/bash
 
+rildebug=0
+nocomril=0
+keepdata=0
+forcetosystem=0
+installedonsystem=0
+
 while getopts :rnh opt; do
   case $opt in
     r)
@@ -10,11 +16,16 @@ while getopts :rnh opt; do
     echo "Not installing Commercial Ril, should be using mozril"
     nocomril=1
     ;;
+    s) 
+    echo "Force install to system"
+    forcetosystem=1 
+    ;;
     h) 
     echo "
     -k : keep previous profile
     -r : to turn on ril debugging
     -n : to not install comril
+    -s : force install to system partition
     -h : for help
     "
     exit
@@ -24,9 +35,6 @@ while getopts :rnh opt; do
     keepdata=1
     ;;
     *)
-    rildebug=0
-    nocomril=0
-    keepdata=0
     ;;
   esac
 done
@@ -56,55 +64,76 @@ adb shell rm -r /system/b2g &&
 echo + Check how much is removed afterwards &&
 adb shell df /system &&
 
-if [ ! $keepdata ]
-then
-echo + Deleting Profile data &&
-adb shell rm -r /data/b2g/mozilla &&
-adb shell rm -r /data/b2g/* &&
-adb shell rm -r /data/local/storage/persistent/*
-adb shell rm -r /data/local/user.js &&
-adb shell rm -r /data/local/permissions.sqlite* &&
-adb shell rm -r /data/local/indexedDB &&
-adb shell rm -r /data/local/debug_info_trigger &&
-fi
-
 echo + Installing new b2g &&
 adb push b2g /system/b2g &&
 
-echo + Done installing Gecko!
+echo + Done installing Gecko! &&
 
-if [ ! $nocomril ]
-then
-echo + Installing new RIL &&
-adb push ril /system/b2g/distribution/bundles/
-echo + Done installing RIL!
-fi
-
-echo + Adjusting user.js &&
-if [ $rildebug ]
-then
-  cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > gaia/user.js 
-  cat gaia/user.js | sed -e "s/ril.debugging.enabled\", false/ril.debugging.enabled\", true/" > user.js 
+if [ ! $nocomril ] ; then
+  echo + Installing new RIL &&
+  adb push ril /system/b2g/distribution/bundles/
+  echo + Done installing RIL!
 else
-  cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > user.js 
+  echo + COM RIL not installed
 fi
 
-echo + Deleting any old gaia and profiles &&
+if [ ! $rildebug ] ; then
+  echo + Ril Debug pref turned on
+  cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > gaia/user.js 
+  cat gaia/user.js | sed -e "s/ril.debugging.enabled\", false/ril.debugging.enabled\", true/" > user.js
+else
+  if [ $keepdata ] ; then
+    echo + RIL debug pref not turned on
+    cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > user.js 
+  else 
+    echo + user.js pref not touched
+  fi
+fi
+
+if adb shell cat /data/local/webapps/webapps.json | grep -m 1 '"basePath": "/system' ; then
+  installedonsystem=1
+else
+  installedonsystem=0
+fi
+
+echo "installedonsystem = ${installedonsystem}" &&
+
+echo + Deleting any old gaia and cache &&
 adb shell rm -r /cache/* &&
 adb shell rm -r /data/local/webapps &&
 adb shell rm -r /data/local/svoperapps &&
 adb shell rm -r /data/local/OfflineCache &&
+adb shell rm -r /system/b2g/webapps &&
+
+if [ $keepdata ] ; then
+  echo + Deleting Profile data &&
+  adb shell rm -r /data/b2g/* &&
+  adb shell rm -r /data/local/storage/persistent/*
+  adb shell rm -r /data/local/user.js &&
+  adb shell rm -r /data/local/permissions.sqlite* &&
+  adb shell rm -r /data/local/indexedDB &&
+  adb shell rm -r /data/local/debug_info_trigger
+else
+  echo + keeping data profile
+fi
 
 echo + Installing new gaia webapps &&
-adb shell mkdir -p /system/b2g/defaults/pref &&
-if adb shell cat /data/local/webapps/webapps.json | grep -qs '"basePath": "/system' ; then
-	adb push gaia/profile/webapps /system/b2g/webapps
+if [ $forcetosystem -o $installedonsystem ] ; then
+  echo + installing to system
+  echo "force to system : $forcetosystem ; installed onsystem : $installedonsystem"
+  adb shell mkdir -p /system/b2g/defaults/pref &&
+  adb push gaia/profile/webapps /system/b2g/webapps
+  adb push user.js /system/b2g/defaults/pref &&
+  adb push gaia/profile/settings.json /system/b2g/defaults
 else
-	adb push gaia/profile/webapps /data/local/webapps
+  echo + installing to data/local
+  echo "force to system : $forcetosystem ; installed onsystem : $installedonsyste
+m"
+  adb shell mkdir -p /system/b2g/defaults/pref &&
+  adb push user.js /system/b2g/defaults/pref &&
+  adb push gaia/profile/webapps /data/local/webapps
+  adb push gaia/profile/settings.json /system/b2g/defaults 
 fi
-adb push user.js /system/b2g/defaults/pref &&
-adb push gaia/profile/settings.json /system/b2g/defaults &&
-
 echo + Rebooting &&
 adb shell sync &&
 adb shell reboot &&

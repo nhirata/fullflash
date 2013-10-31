@@ -60,7 +60,12 @@ if [ ! $keepdata ]
 then
 echo + Deleting Profile data &&
 adb shell rm -r /data/b2g/mozilla &&
+adb shell rm -r /data/b2g/* &&
 adb shell rm -r /data/local/storage/persistent/*
+adb shell rm -r /data/local/user.js &&
+adb shell rm -r /data/local/permissions.sqlite* &&
+adb shell rm -r /data/local/indexedDB &&
+adb shell rm -r /data/local/debug_info_trigger &&
 fi
 
 echo + Installing new b2g &&
@@ -86,14 +91,9 @@ fi
 
 echo + Deleting any old gaia and profiles &&
 adb shell rm -r /cache/* &&
-adb shell rm -r /data/b2g/* &&
 adb shell rm -r /data/local/webapps &&
-adb shell rm -r /data/local/user.js &&
 adb shell rm -r /data/local/svoperapps &&
-adb shell rm -r /data/local/permissions.sqlite* &&
 adb shell rm -r /data/local/OfflineCache &&
-adb shell rm -r /data/local/indexedDB &&
-adb shell rm -r /data/local/debug_info_trigger &&
 
 echo + Installing new gaia webapps &&
 adb shell mkdir -p /system/b2g/defaults/pref &&

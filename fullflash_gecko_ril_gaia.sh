@@ -17,11 +17,10 @@ function helper(){
     -h : for help
     -i : image flash
     -s : flash to specific device serial
-    -b : backup only
-    -r : restore only
-    -k : keep previous profile; backup and restore
+    -b : backup before flashing
+    -R : restore after flashing
+    -k : keep previous profile; backup and restore options
     "
-    exit 0
 }
 
 function backup(){
@@ -39,7 +38,6 @@ function backup(){
     rm -rf mozilla-profile/data-local/webapps
     adb shell start b2g 2> ./mozilla-profile/backup.log
     echo -e "Backup done."
-    exit 0
 }
 
 function restore(){
@@ -55,7 +53,6 @@ function restore(){
     adb reboot
     sleep 30
     echo -e "Recover done."
-    exit 0
 }
 
 function run_adb()
@@ -77,9 +74,10 @@ function flash_gecko() {
     echo + Check how much is removed afterwards &&
     adb shell df /system &&
     run_adb push b2g /system/b2g &&
-    echo + Check how much is placed on after system install&&
-    adb shell df /system &&
+    echo + Check how much is placed on after system install &&
+    adb shell df /system
 }
+
 function flash_comril() {
   echo + Installing new RIL &&
   run_adb push ril /system/b2g/distribution/bundles/
@@ -88,19 +86,31 @@ function flash_comril() {
 
 function adb_clean_gaia() {
     echo "Clean Gaia and profiles ..."
+    echo + Deleting any old cache &&
+    run_adb shell rm -r /data/local/OfflineCache &&
+    run_adb shell rm -r /cache/* &&
+
     echo + Deleting Profile data &&
     run_adb shell rm -r /data/b2g/* &&
     run_adb shell rm -r /data/local/user.js &&
     run_adb shell rm -r /data/local/indexedDB &&
     run_adb shell rm -r /data/local/debug_info_trigger &&
-    run_adb shell rm -r /data/local/storage/persistent/* &&
     run_adb shell rm -r /data/local/permissions.sqlite* &&
-    echo + Deleting any old gaia and cache &&
+
+    run_adb reboot &&
+    run_adb wait-for-device &&
+    run_adb root &&
+    run_adb wait-for-device &&
+    run_adb remount &&
+    run_adb wait-for-device &&
+    
+    run_adb shell stop b2g &&
+    run_adb shell rm -r /data/local/storage/persistent/* &&
+    echo + Deleting any old gaia &&
     run_adb shell rm -r /system/b2g/webapps &&
     run_adb shell rm -r /data/local/webapps &&
     run_adb shell rm -r /data/local/svoperapps &&
-    run_adb shell rm -r /data/local/OfflineCache &&
-    run_adb shell rm -r /cache/* &&
+
     echo "Clean Done."
 }
 
@@ -111,10 +121,10 @@ function adb_push_gaia() {
     cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > user.js
     
     echo "Push Gaia ..."
-    run_adb shell mkdir -p $GAIA_DIR/system/b2g/defaults/pref &&
+    run_adb shell mkdir -p /system/b2g/defaults/pref &&
     run_adb push gaia/profile/webapps $GAIA_DIR/webapps &&
-    run_adb push user.js $GAIA_DIR/defaults/pref &&
-    run_adb push gaia/profile/settings.json $GAIA_DIR/defaults &&
+    run_adb push user.js /system/b2g/defaults/pref &&
+    run_adb push gaia/profile/settings.json /system/b2g/defaults &&
     echo "Push Done."
 }
 
@@ -127,6 +137,7 @@ function flash_gaia() {
 while getopts :rnh opt; do
   case $opt in
     b) Backup_Flag=1; 
+    ;;
     r)
     echo "Turning on RIL Debugging"
     rildebug=1
@@ -139,14 +150,18 @@ while getopts :rnh opt; do
       case "$2" in
         "") shift 2;;
         *) ADB_DEVICE=$2; ADB_FLAGS+="-s $2"; shift 2;;
-      esac ;;
+      esac
       specificdevice=$2
+    ;;
     f) 
     echo "Force install to system"
     forcetosystem=1 
     ;;
     h|help) helper;
     exit 0
+    ;;
+    R)
+    Recover_Flag=1
     ;;
     k)
     echo "keep previous Profile"
@@ -182,6 +197,9 @@ else
   fi
 fi
 
+flash_gecko
+adb_clean_gaia
+
 if adb shell cat /data/local/webapps/webapps.json | grep -m 1 '"basePath": "/system' ; then
   installedonsystem=1
 else
@@ -193,16 +211,16 @@ echo "installedonsystem = ${installedonsystem}" &&
 echo + Installing new gaia webapps &&
 if [ $forcetosystem -o $installedonsystem ] ; then
   echo + installing to system
-  $install_directory="/system/b2g"
+  Install_Directory="/system/b2g"
 else
   echo + installing to data/local
-    $install_directory="/data/local"
+    Install_Directory="/data/local"
 fi
 
-adb_push_gaia $install_directory
+adb_push_gaia $Install_Directory
 
 #Restore
-if [ $RecoverOnly_Flag == true ]; then
+if [ $RecoverOnly_Flag ]; then
   restore
 fi
 
@@ -211,5 +229,3 @@ adb shell sync &&
 adb shell reboot &&
 
 echo + Done
-
-

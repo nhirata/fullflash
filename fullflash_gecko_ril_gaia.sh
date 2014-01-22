@@ -73,11 +73,16 @@ function run_fastboot()
     return $?
 }
 
-function flash_gecko() {
+function root_remount()
+{
     run_adb root
     run_adb wait-for-device
     run_adb remount
     run_adb wait-for-device
+}
+
+function flash_gecko() {
+    root_remount
     echo + Check how much space is taken
     run_adb shell df /system
     echo + removing old system
@@ -90,20 +95,14 @@ function flash_gecko() {
 }
 
 function flash_comril() {
-    run_adb root
-    run_adb wait-for-device
-    run_adb remount
-    run_adb wait-for-device
+    root_remount
     echo + Installing new RIL
     run_adb push ril /system/b2g/distribution/bundles/
     echo + Done installing RIL!
 }
 
 function adb_clean_gaia() {
-    run_adb root
-    run_adb wait-for-device
-    run_adb remount
-    run_adb wait-for-device
+    root_remount
     
     adb shell df /data
     echo "Clean Gaia and profiles ..."
@@ -121,10 +120,7 @@ function adb_clean_gaia() {
     adb shell df /data
     run_adb reboot
     run_adb wait-for-device
-    run_adb root
-    run_adb wait-for-device
-    run_adb remount
-    run_adb wait-for-device
+    root_remount
     
     run_adb shell stop b2g
     run_adb shell rm -r /data/local/storage/persistent/*
@@ -323,4 +319,4 @@ echo + Rebooting
 run_adb shell sync
 run_adb shell reboot
 
-echo + Done
+echo + Done: Completed flashing the device

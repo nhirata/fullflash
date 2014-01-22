@@ -31,14 +31,14 @@ function backupdevice(){
         mkdir mozilla-profile
     fi
     echo -e "Backup your profiles..."
-    adb shell stop b2g 2> ./mozilla-profile/backup.log
+    run_adb shell stop b2g 2> ./mozilla-profile/backup.log
     rm -rf ./mozilla-profile/*
     mkdir -p mozilla-profile/profile
-    adb pull /data/b2g/mozilla ./mozilla-profile/profile 2> ./mozilla-profile/backup.log
+    run_adb pull /data/b2g/mozilla ./mozilla-profile/profile 2> ./mozilla-profile/backup.log
     mkdir -p mozilla-profile/data-local
-    adb pull /data/local ./mozilla-profile/data-local 2> ./mozilla-profile/backup.log
+    run_adb pull /data/local ./mozilla-profile/data-local 2> ./mozilla-profile/backup.log
     rm -rf mozilla-profile/data-local/webapps
-    adb shell start b2g 2> ./mozilla-profile/backup.log
+    run_adb shell start b2g 2> ./mozilla-profile/backup.log
     echo -e "Backup done."
 }
 
@@ -48,11 +48,11 @@ function restoredevice(){
         echo "no recover files."
         exit -1
     fi
-    adb shell stop b2g 2> ./mozilla-profile/recover.log
-    adb shell rm -r /data/b2g/mozilla 2> ./mozilla-profile/recover.log
-    adb push ./mozilla-profile/profile /data/b2g/mozilla 2> ./mozilla-profile/recover.log
-    adb push ./mozilla-profile/data-local /data/local 2> ./mozilla-profile/recover.log
-    adb reboot
+    run_adb shell stop b2g 2> ./mozilla-profile/recover.log
+    run_adb shell rm -r /data/b2g/mozilla 2> ./mozilla-profile/recover.log
+    run_adb push ./mozilla-profile/profile /data/b2g/mozilla 2> ./mozilla-profile/recover.log
+    run_adb push ./mozilla-profile/data-local /data/local 2> ./mozilla-profile/recover.log
+    run_adb reboot
     sleep 30
     echo -e "Recover done."
 }

@@ -1,4 +1,5 @@
 #!/bin/bash -e
+
 Shallow_Flag=1
 Backup_Flag=""
 Recover_Flag=""
@@ -152,7 +153,7 @@ function shallowflash()
 
 if [ ! $nocomril ] ; then
   if ! [ -f ril ]; then
-        echo "Cannot found $GAIA_ZIP_FILE file.  Skipping ril"
+        echo "Cannot found ril folder.  Skipping ril"
         echo + COM RIL not installed
   else 
   flash_comril

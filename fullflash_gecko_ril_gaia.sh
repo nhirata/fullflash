@@ -90,9 +90,13 @@ function flash_gecko() {
 }
 
 function flash_comril() {
-  echo + Installing new RIL
-  run_adb push ril /system/b2g/distribution/bundles/
-  echo + Done installing RIL!
+    run_adb root
+    run_adb wait-for-device
+    run_adb remount
+    run_adb wait-for-device
+    echo + Installing new RIL
+    run_adb push ril /system/b2g/distribution/bundles/
+    echo + Done installing RIL!
 }
 
 function adb_clean_gaia() {
@@ -100,6 +104,8 @@ function adb_clean_gaia() {
     run_adb wait-for-device
     run_adb remount
     run_adb wait-for-device
+    
+    adb shell df /data
     echo "Clean Gaia and profiles ..."
     echo + Deleting any old cache
     run_adb shell rm -r /data/local/OfflineCache
@@ -112,6 +118,7 @@ function adb_clean_gaia() {
     run_adb shell rm -r /data/local/debug_info_trigger
     run_adb shell rm -r /data/local/permissions.sqlite*
 
+    adb shell df /data
     run_adb reboot
     run_adb wait-for-device
     run_adb root
@@ -125,8 +132,8 @@ function adb_clean_gaia() {
     run_adb shell rm -r /system/b2g/webapps
     run_adb shell rm -r /data/local/webapps
     run_adb shell rm -r /data/local/svoperapps
-
     echo "Clean Done."
+    adb shell df /data
 }
 
 function adb_push_gaia() {
@@ -141,13 +148,19 @@ function adb_push_gaia() {
     run_adb push user.js /system/b2g/defaults/pref
     run_adb push gaia/profile/settings.json /system/b2g/defaults
     echo "Push Done."
+    adb shell df /data
 }
 
 function shallowflash()
 {
 
 if [ ! $nocomril ] ; then
+  if ! [ -f ril ]; then
+        echo "Cannot found $GAIA_ZIP_FILE file.  Skipping ril"
+        echo + COM RIL not installed
+  else 
   flash_comril
+  fi
 else
   echo + COM RIL not installed
 fi
@@ -210,12 +223,12 @@ function fastboot_flash_image()
 
 function flash_fastboot()
 {
-    run_adb reboot bootloader
-    run_fastboot devices
-    run_fastboot erase cache
-    fastboot_flash_image userdata
-    ([ ! -e out/target/product/$DEVICE/boot.img ] || fastboot_flash_image boot)
-    fastboot_flash_image system
+    run_adb reboot bootloader &&
+    run_fastboot devices &&
+    run_fastboot erase cache &&
+    fastboot_flash_image userdata &&
+    ([ ! -e out/target/product/$DEVICE/boot.img ] || fastboot_flash_image boot) &&
+    fastboot_flash_image system &&
     run_fastboot reboot
 }
 

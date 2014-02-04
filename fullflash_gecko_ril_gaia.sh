@@ -6,7 +6,7 @@ Recover_Flag=""
 rildebug=""
 nocomril=""
 keepdata=""
-forcetosystem=""
+forcetosystem=1
 installedonsystem=""
 specificdevice=""
 FASTBOOT=${FASTBOOT:-fastboot}
@@ -15,7 +15,7 @@ function helper(){
     echo -e "
     -d : to turn on ril debugging
     -n : to not install comril
-    -f : force install to system partition
+    -f : force install to data partition
     -h : for help
     -i <device name> : image flash the device ex: -i inari
     -s <serial device> : flash to specific device serial
@@ -181,7 +181,7 @@ adb_clean_gaia
 if adb shell cat /data/local/webapps/webapps.json | grep -m 1 '"basePath": "/system' ; then
   installedonsystem=1
 else
-  installedonsystem=0
+  installedonsystem=""
 fi
 
 echo "installedonsystem = ${installedonsystem}"
@@ -266,8 +266,8 @@ while getopts :bdsfkirnh opt; do
       specificdevice=$2
     ;;
     f) 
-    echo "Force install to system"
-    forcetosystem=1 
+    echo "Force install to data"
+    forcetosystem=""
     ;;
     h|help) helper;
     exit 0

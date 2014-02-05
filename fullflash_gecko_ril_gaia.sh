@@ -6,7 +6,6 @@ Recover_Flag=""
 rildebug=""
 nocomril=""
 keepdata=""
-forcetosystem=1
 installedonsystem=""
 specificdevice=""
 FASTBOOT=${FASTBOOT:-fastboot}
@@ -15,7 +14,6 @@ function helper(){
     echo -e "
     -d : to turn on ril debugging
     -n : to not install comril
-    -f : force install to data partition
     -h : for help
     -i <device name> : image flash the device ex: -i inari
     -s <serial device> : flash to specific device serial
@@ -26,7 +24,7 @@ function helper(){
 }
 
 function backupdevice(){
-    if [ ! -d mozilla-profile ]; then
+    if [ ! -d "mozilla-profile" ]; then
         echo "no backup folder, creating..."
         mkdir mozilla-profile
     fi
@@ -61,15 +59,15 @@ function run_adb()
 {
     # TODO: Bug 875534 - Unable to direct ADB forward command to inari devices due to colon (:) in serial ID
     # If there is colon in serial number, this script will have some warning message.
-    adb $ADB_FLAGS $@
+    adb ${ADB_FLAGS} $@
 }
 
 function run_fastboot()
 {
     if [ "$1" = "devices" ]; then
-        $FASTBOOT $@
+        ${FASTBOOT} $@
     else
-        $FASTBOOT $FASTBOOT_FLAGS $@
+        ${FASTBOOT} ${FASTBOOT_FLAGS} $@
     fi
     return $?
 }
@@ -141,7 +139,7 @@ function adb_push_gaia() {
     
     echo "Push Gaia ..."
     run_adb shell mkdir -p /system/b2g/defaults/pref
-    run_adb push gaia/profile/webapps $GAIA_DIR/webapps
+    run_adb push gaia/profile/webapps ${GAIA_DIR}/webapps
     run_adb push user.js /system/b2g/defaults/pref
     run_adb push gaia/profile/settings.json /system/b2g/defaults
     echo "Push Done."
@@ -151,8 +149,8 @@ function adb_push_gaia() {
 function shallowflash()
 {
 
-if [ ! $nocomril ] ; then
-  if ! [ -f ril ]; then
+if [ ! ${nocomril} ] ; then
+  if ! [ -f "ril" ]; then
         echo "Cannot found ril folder.  Skipping ril"
         echo + COM RIL not installed
   else 
@@ -162,12 +160,12 @@ else
   echo + COM RIL not installed
 fi
 
-if [ ! $rildebug ] ; then
+if [ ! ${rildebug} ] ; then
   echo + Ril Debug pref turned on
   cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > gaia/user.js 
   cat gaia/user.js | sed -e "s/ril.debugging.enabled\", false/ril.debugging.enabled\", true/" > user.js
 else
-  if [ $keepdata ] ; then
+  if [ ${keepdata} ] ; then
     echo + RIL debug pref not turned on
     cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > user.js 
   else 
@@ -178,24 +176,10 @@ fi
 flash_gecko
 adb_clean_gaia
 
-if adb shell cat /data/local/webapps/webapps.json | grep -m 1 '"basePath": "/system' ; then
-  installedonsystem=1
-else
-  installedonsystem=""
-fi
+echo + installing to system
+Install_Directory="/system/b2g"
 
-echo "installedonsystem = ${installedonsystem}"
-
-echo + Installing new gaia webapps
-if [ $forcetosystem -o $installedonsystem ] ; then
-  echo + installing to system
-  Install_Directory="/system/b2g"
-else
-  echo + installing to data/local
-    Install_Directory="/data/local"
-fi
-
-adb_push_gaia $Install_Directory
+adb_push_gaia ${Install_Directory}
 }
 
 function fastboot_flash_image()
@@ -214,7 +198,7 @@ function fastboot_flash_image()
             echo "Try re-flashing after running"
             echo "  \$ rm -rf $(dirname "$imgpath")/data && ./build.sh"
         fi
-        return $rv
+        return ${rv}
     fi
 }
 
@@ -241,7 +225,7 @@ update_time()
     echo Attempting to set the time on the device
     run_adb wait-for-device
     run_adb shell toolbox date `date +%s`
-    run_adb shell setprop persist.sys.timezone $TIMEZONE
+    run_adb shell setprop persist.sys.timezone ${TIMEZONE}
 }
 
 ## Main
@@ -298,11 +282,11 @@ if [ `run_adb get-state` = "unknown" ]; then
 fi
 
 #Backup
-if [ $Backup_Flag ]; then
+if [ ${Backup_Flag} ]; then
     backupdevice
 fi
 
-if [ $Shallow_Flag ]; then
+if [ ${Shallow_Flag} ]; then
     echo "Shallowflag = $Shallow_Flag"
     shallowflash
 else
@@ -310,7 +294,7 @@ else
 fi
 
 #Restore
-if [ $Recover_Flag ]; then
+if [ ${Recover_Flag} ]; then
     restoredevice
 fi
 

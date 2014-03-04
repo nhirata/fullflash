@@ -3,11 +3,13 @@
 Shallow_Flag=1
 Backup_Flag=""
 Recover_Flag=""
+Reset_Flag=1
 rildebug=""
 nocomril=""
 keepdata=""
 installedonsystem=""
 specificdevice=""
+
 FASTBOOT=${FASTBOOT:-fastboot}
 
 function helper(){
@@ -20,7 +22,7 @@ function helper(){
     -b : backup before flashing
     -r : restore after flashing
     -k : keep previous profile; backup and restore options
-    "
+    -p : do not reset phone"
 }
 
 function backupdevice(){
@@ -144,6 +146,13 @@ function adb_push_gaia() {
     run_adb push gaia/profile/settings.json /system/b2g/defaults
     echo "Push Done."
     adb shell df /data
+}
+
+function resetphone()
+{
+run_adb shell mkdir /cache/recovery &&
+run_adb shell 'echo "--wipe_data" > /cache/recovery/command' &&
+run_adb reboot recovery
 }
 
 function shallowflash()
@@ -271,6 +280,9 @@ while getopts :bdsfkirnh opt; do
         *) DEVICE=$2
       esac
     ;;
+    p)
+    Reset_Flag=""
+    ;;
     *)
     ;;
   esac
@@ -291,6 +303,11 @@ if [ ${Shallow_Flag} ]; then
     shallowflash
 else
     flash_fastboot
+fi
+
+if [ ${Reset_Flag} ]; then
+  echo "Reseting the phone"
+  resetphone
 fi
 
 #Restore

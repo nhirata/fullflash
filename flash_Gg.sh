@@ -9,6 +9,7 @@ nocomril=""
 keepdata=""
 installedonsystem=""
 specificdevice=""
+Debug_Flag=1
 
 FASTBOOT=${FASTBOOT:-fastboot}
 
@@ -22,7 +23,8 @@ function helper(){
     -b : backup before flashing
     -r : restore after flashing
     -k : keep previous profile; backup and restore options
-    -p : do not reset phone"
+    -p : do not reset phone
+    -a : do not turn on adb remote debugging"
 }
 
 function backupdevice(){
@@ -143,7 +145,20 @@ function adb_push_gaia() {
     run_adb shell mkdir -p /system/b2g/defaults/pref
     run_adb push gaia/profile/webapps ${GAIA_DIR}/webapps
     run_adb push user.js /system/b2g/defaults/pref
-    run_adb push gaia/profile/settings.json /system/b2g/defaults
+    
+    if [ ${Debug_Flag} ] ; then 
+       if grep -q "Version=28.0" "b2g/application.ini" ; then
+          echo 'Turning on Debug for v1.3'
+          cat gaia/profile/settings.json | sed -e "s/devtools.debugger.remote-enabled\":false/devtools.debugger.remote-enabled\":true/" > settings.json
+       else
+          echo 'Turning on Debug for v1.4'
+          cat gaia/profile/settings.json | sed -e "s/developer.menu.enabled\":false/developer.menu.enabled\":true/" > gaia/settings.json
+          cat gaia/settings.json | sed -e "s/debugger.remote-mode\":\"disabled\"/debugger.remote-mode\":\"adb-only\"/" > settings.json
+       fi
+       run_adb push settings.json /system/b2g/defaults
+    else
+       run_adb push gaia/profile/settings.json /system/b2g/defaults
+    fi
     echo "Push Done."
     adb shell df /data
 }
@@ -239,13 +254,16 @@ update_time()
 
 ## Main
 ## Switch
-while getopts :bdsfkirnh opt; do
+while getopts :apbdsfkirnh opt; do
   case $opt in
     b) Backup_Flag=1; 
     ;;
     d)
     echo "Turning on RIL Debugging"
     rildebug=1
+    ;;
+    a) 
+    Debug_Flag=""
     ;;
     n)
     echo "Not installing Commercial Ril, should be using mozril"

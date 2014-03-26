@@ -10,6 +10,7 @@ keepdata=""
 installedonsystem=""
 specificdevice=""
 Debug_Flag=1
+Install_Directory="/system/b2g"
 
 FASTBOOT=${FASTBOOT:-fastboot}
 
@@ -150,15 +151,23 @@ function adb_push_gaia() {
        if grep -q "Version=28.0" "b2g/application.ini" ; then
           echo 'Turning on Debug for v1.3'
           cat gaia/profile/settings.json | sed -e "s/devtools.debugger.remote-enabled\":false/devtools.debugger.remote-enabled\":true/" > settings.json
+          run_adb push settings.json /system/b2g/defaults
        elif grep -q "Version=30.0" "b2g/application.ini" ; then
           echo 'Turning on Debug for v1.4'
           cat gaia/profile/settings.json | sed -e "s/developer.menu.enabled\":false/developer.menu.enabled\":true/" > gaia/settings.json
           cat gaia/settings.json | sed -e "s/debugger.remote-mode\":\"disabled\"/debugger.remote-mode\":\"adb-only\"/" > settings.json
+          run_adb push settings.json /system/b2g/defaults
        fi
-       run_adb push settings.json /system/b2g/defaults
     else
        run_adb push gaia/profile/settings.json /system/b2g/defaults
     fi
+
+    if [! ${forcetosystem} ] ; then
+    	run_adb remount
+    	run_adb shell mkdir /system/b2g/webapps
+    	run_adb push gaia/profile/webapps/webapps.json /system/b2g/webapps/webapps.json
+    fi
+
     echo "Push Done."
     adb shell df /data
 }
@@ -200,9 +209,7 @@ fi
 flash_gecko
 adb_clean_gaia
 
-echo + installing to system
-Install_Directory="/system/b2g"
-
+echo "Installing to directory : ${Install_Directory}"
 adb_push_gaia ${Install_Directory}
 }
 
@@ -277,8 +284,10 @@ while getopts :apbdsfkirnh opt; do
       specificdevice=$2
     ;;
     f) 
-    echo "Force install to data"
+    echo "Force install to data partition"
     forcetosystem=""
+    Install_Directory="/data/local"
+    Reset_Flag=""
     ;;
     h|help) helper;
     exit 0
@@ -324,8 +333,14 @@ else
 fi
 
 if [ ${Reset_Flag} ]; then
-  echo "Reseting the phone"
-  resetphone
+  DEVICE=`adb shell getprop ro.product.model`
+  DEVICE=`echo ${DEVICE}|tr -ds '\r\n' %1`
+  if [ "${DEVICE}" != "sp6821a" ]; then
+    echo "Reseting the phone"
+    resetphone
+  else
+    echo "Did not reset the phone"
+  fi
 fi
 
 #Restore

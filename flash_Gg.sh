@@ -152,8 +152,8 @@ function adb_push_gaia() {
           echo 'Turning on Debug for v1.3'
           cat gaia/profile/settings.json | sed -e "s/devtools.debugger.remote-enabled\":false/devtools.debugger.remote-enabled\":true/" > settings.json
           run_adb push settings.json /system/b2g/defaults
-       elif grep -q "Version=30.0" "b2g/application.ini" ; then
-          echo 'Turning on Debug for v1.4'
+       else
+          echo 'Turning on Debug for v1.4+'
           cat gaia/profile/settings.json | sed -e "s/developer.menu.enabled\":false/developer.menu.enabled\":true/" > gaia/settings.json
           cat gaia/settings.json | sed -e "s/debugger.remote-mode\":\"disabled\"/debugger.remote-mode\":\"adb-only\"/" > settings.json
           run_adb push settings.json /system/b2g/defaults

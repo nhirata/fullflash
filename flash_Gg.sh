@@ -162,7 +162,7 @@ function adb_push_gaia() {
        run_adb push gaia/profile/settings.json /system/b2g/defaults
     fi
 
-    if [! ${forcetosystem} ] ; then
+    if [ ! ${forcetosystem} ] ; then
     	run_adb remount
     	run_adb shell mkdir /system/b2g/webapps
     	run_adb push gaia/profile/webapps/webapps.json /system/b2g/webapps/webapps.json

@@ -147,8 +147,13 @@ function adb_push_gaia() {
     run_adb push gaia/profile/webapps ${GAIA_DIR}/webapps
     run_adb push user.js /system/b2g/defaults/pref
     
-    if [ ${Debug_Flag} ] ; then 
-       if grep -q "Version=28.0" "b2g/application.ini" ; then
+    if [ ${Debug_Flag} ] ; then
+       if grep -q "Version=28.1" "b2g/application.ini" ; then
+          echo 'Turning on Debug for v1.3t'
+          cat gaia/profile/settings.json | sed -e "s/devtools.debugger.remote-enabled\":false/devtools.debugger.remote-enabled\":true/" > settings.json
+          run_adb push settings.json /system/b2g/defaults 
+       else
+	if grep -q "Version=28.0" "b2g/application.ini" ; then
           echo 'Turning on Debug for v1.3'
           cat gaia/profile/settings.json | sed -e "s/devtools.debugger.remote-enabled\":false/devtools.debugger.remote-enabled\":true/" > settings.json
           run_adb push settings.json /system/b2g/defaults

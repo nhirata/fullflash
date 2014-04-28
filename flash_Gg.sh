@@ -1,4 +1,12 @@
 #!/bin/bash -e
+#==========================================================================
+#
+# IMPORTANT: only for internal use!
+#
+# Credit :
+# -  mwu (for the original gecko/gaia flash script)
+# -  askeing
+# -  nhirata
 
 Shallow_Flag=1
 Backup_Flag=""

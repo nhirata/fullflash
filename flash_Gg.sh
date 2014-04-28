@@ -1,4 +1,11 @@
 #!/bin/bash -e
+#
+# ====================================================
+# credit : 
+# - mwu ( for original flash script Gecko/Gaia )
+# - askeing
+# - nhirata
+#    
 
 Shallow_Flag=1
 Backup_Flag=""

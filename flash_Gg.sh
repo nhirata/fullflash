@@ -21,6 +21,8 @@ Install_Directory="/system/b2g"
 
 FASTBOOT=${FASTBOOT:-fastboot}
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 function helper(){
     echo -e "
     -d : to turn on ril debugging
@@ -40,14 +42,14 @@ function backupdevice(){
         mkdir mozilla-profile
     fi
     echo -e "Backup your profiles..."
-    run_adb shell stop b2g 2> ./mozilla-profile/backup.log
-    rm -rf ./mozilla-profile/*
-    mkdir -p mozilla-profile/profile
-    run_adb pull /data/b2g/mozilla ./mozilla-profile/profile 2> ./mozilla-profile/backup.log
-    mkdir -p mozilla-profile/data-local
-    run_adb pull /data/local ./mozilla-profile/data-local 2> ./mozilla-profile/backup.log
-    rm -rf mozilla-profile/data-local/webapps
-    run_adb shell start b2g 2> ./mozilla-profile/backup.log
+    run_adb shell stop b2g 2> "$SCRIPT_DIR/mozilla-profile/backup.log"
+    rm -rf "$SCRIPT_DIR/mozilla-profile/*"
+    mkdir -p "$SCRIPT_DIR/mozilla-profile/profile"
+    run_adb pull /data/b2g/mozilla "$SCRIPT_DIR/mozilla-profile/profile" 2> "$SCRIPT_DIR/mozilla-profile/backup.log"
+    mkdir -p "$SCRIPT_DIR/mozilla-profile/data-local"
+    run_adb pull /data/local "$SCRIPT_DIR/mozilla-profile/data-local" 2> "$SCRIPT_DIR/mozilla-profile/backup.log"
+    rm -rf "$SCRIPT_DIR/mozilla-profile/data-local/webapps"
+    run_adb shell start b2g 2> "$SCRIPT_DIR/mozilla-profile/backup.log"
     echo -e "Backup done."
 }
 
@@ -57,10 +59,10 @@ function restoredevice(){
         echo "no recover files."
         exit -1
     fi
-    run_adb shell stop b2g 2> ./mozilla-profile/recover.log
-    run_adb shell rm -r /data/b2g/mozilla 2> ./mozilla-profile/recover.log
-    run_adb push ./mozilla-profile/profile /data/b2g/mozilla 2> ./mozilla-profile/recover.log
-    run_adb push ./mozilla-profile/data-local /data/local 2> ./mozilla-profile/recover.log
+    run_adb shell stop b2g 2> "$SCRIPT_DIR/mozilla-profile/recover.log"
+    run_adb shell rm -r /data/b2g/mozilla 2> "$SCRIPT_DIR/mozilla-profile/recover.log"
+    run_adb push "$SCRIPT_DIR/mozilla-profile/profile" /data/b2g/mozilla 2> "$SCRIPT_DIR/mozilla-profile/recover.log"
+    run_adb push "$SCRIPT_DIR/mozilla-profile/data-local" /data/local 2> "$SCRIPT_DIR/mozilla-profile/recover.log"
     run_adb reboot
     sleep 30
     echo -e "Recover done."
@@ -70,15 +72,15 @@ function run_adb()
 {
     # TODO: Bug 875534 - Unable to direct ADB forward command to inari devices due to colon (:) in serial ID
     # If there is colon in serial number, this script will have some warning message.
-    adb ${ADB_FLAGS} $@
+    adb ${ADB_FLAGS} "$@"
 }
 
 function run_fastboot()
 {
     if [ "$1" = "devices" ]; then
-        ${FASTBOOT} $@
+        ${FASTBOOT} "$@"
     else
-        ${FASTBOOT} ${FASTBOOT_FLAGS} $@
+        ${FASTBOOT} ${FASTBOOT_FLAGS} "$@"
     fi
     return $?
 }
@@ -99,7 +101,7 @@ function flash_gecko() {
     run_adb shell rm -r /system/b2g
     echo + Check how much is removed afterwards
     adb shell df /system
-    run_adb push b2g /system/b2g
+    run_adb push "$SCRIPT_DIR/b2g" /system/b2g
     echo + Check how much is placed on after system install
     adb shell df /system
 }
@@ -107,7 +109,7 @@ function flash_gecko() {
 function flash_comril() {
     root_remount
     echo + Installing new RIL
-    run_adb push ril /system/b2g/distribution/bundles/
+    run_adb push "$SCRIPT_DIR/ril" /system/b2g/distribution/bundles/
     echo + Done installing RIL!
 }
 
@@ -146,18 +148,18 @@ function adb_push_gaia() {
     GAIA_DIR=$1
     
     ## Adjusting user.js
-    cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > user.js
+    cat "$SCRIPT_DIR/gaia/profile/user.js" | sed -e "s/user_pref/pref/" > "$SCRIPT_DIR/user.js"
     
     echo "Push Gaia ..."
     run_adb shell mkdir -p /system/b2g/defaults/pref
-    run_adb push gaia/profile/webapps ${GAIA_DIR}/webapps
-    run_adb push user.js /system/b2g/defaults/pref
-    run_adb push gaia/profile/settings.json /system/b2g/defaults
+    run_adb push "$SCRIPT_DIR/gaia/profile/webapps" ${GAIA_DIR}/webapps
+    run_adb push "$SCRIPT_DIR/user.js" /system/b2g/defaults/pref
+    run_adb push "$SCRIPT_DIR/gaia/profile/settings.json" /system/b2g/defaults
 
     if [ ! ${forcetosystem} ] ; then
     	run_adb remount
     	run_adb shell mkdir /system/b2g/webapps
-    	run_adb push gaia/profile/webapps/webapps.json /system/b2g/webapps/webapps.json
+        run_adb push "$SCRIPT_DIR/gaia/profile/webapps/webapps.json" /system/b2g/webapps/webapps.json
     fi
 
     echo "Push Done."
@@ -187,12 +189,12 @@ fi
 
 if [ ! ${rildebug} ] ; then
   echo + Ril Debug pref turned on
-  cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > gaia/user.js 
-  cat gaia/user.js | sed -e "s/ril.debugging.enabled\", false/ril.debugging.enabled\", true/" > user.js
+  cat "$SCRIPT_DIR/gaia/profile/user.js" | sed -e "s/user_pref/pref/" > "$SCRIPT_DIR/gaia/user.js"
+  cat "$SCRIPT_DIR/gaia/user.js" | sed -e "s/ril.debugging.enabled\", false/ril.debugging.enabled\", true/" > "$SCRIPT_DIR/user.js"
 else
   if [ ${keepdata} ] ; then
     echo + RIL debug pref not turned on
-    cat gaia/profile/user.js | sed -e "s/user_pref/pref/" > user.js 
+    cat "$SCRIPT_DIR/gaia/profile/user.js" | sed -e "s/user_pref/pref/" > "$SCRIPT_DIR/user.js"
   else 
     echo + user.js pref not touched
   fi
@@ -219,7 +221,7 @@ function fastboot_flash_image()
             echo ""
             echo "Flashing $imgpath failed because the image was too large."
             echo "Try re-flashing after running"
-            echo "  \$ rm -rf $(dirname "$imgpath")/data && ./build.sh"
+            echo "  \$ rm -rf $(dirname "$imgpath")/data && $SCRIPT_DIR/build.sh"
         fi
         return ${rv}
     fi

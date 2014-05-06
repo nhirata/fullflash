@@ -323,6 +323,9 @@ else
     flash_fastboot
 fi
 
+# giving a pause before the phone reset to see if that helps
+sleep 10;
+
 if [ ${Reset_Flag} ]; then
   DEVICE=`adb shell getprop ro.product.model`
   DEVICE=`echo ${DEVICE}|tr -ds '\r\n' %1`

@@ -1,3 +1,9 @@
+NOTE:
+I don't really work on this much now that we have the TW-QA flashing tool:
+https://github.com/Mozilla-TWQA/B2G-flash-tool
+
+I might work on turning on dev options as features for shallow flashing...
+
 fullflash
 =========
 To use: 

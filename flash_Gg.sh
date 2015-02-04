@@ -17,6 +17,7 @@ keepdata=""
 installedonsystem=""
 specificdevice=""
 Debug_Flag=1
+HomeButton=""
 Install_Directory="/system/b2g"
 
 FASTBOOT=${FASTBOOT:-fastboot}
@@ -33,7 +34,8 @@ function helper(){
     -b : backup before flashing
     -r : restore after flashing
     -k : keep previous profile; backup and restore options
-    -p : do not reset phone"
+    -p : do not reset phone
+    -e : enable home button"
 }
 
 function backupdevice(){
@@ -154,6 +156,11 @@ function adb_push_gaia() {
     run_adb shell mkdir -p /system/b2g/defaults/pref
     run_adb push "$SCRIPT_DIR/gaia/profile/webapps" ${GAIA_DIR}/webapps
     run_adb push "$SCRIPT_DIR/user.js" /system/b2g/defaults/pref
+
+    if [ ${HomeButton} ] ; then
+      sed -i 's/\"software\-button.enabled\"\: false/\"software\-button.enabled\"\:true/g' $SCRIPT_DIR/gaia/profile/settings.json
+    fi
+
     run_adb push "$SCRIPT_DIR/gaia/profile/settings.json" /system/b2g/defaults
 
     if [ ! ${forcetosystem} ] ; then
@@ -241,15 +248,17 @@ function flash_fastboot()
 update_time()
 {
     if [ `uname` = Darwin ]; then
+        SETTIME="-s `date -j "+%Y%m%d.%H%M%S"`"
         OFFSET=`date +%z`
         OFFSET=${OFFSET:0:3}
         TIMEZONE=`date +%Z$OFFSET|tr +- -+`
     else
+        SETTIME=`date +%s`
         TIMEZONE=`date +%Z%:::z|tr +- -+`
     fi
     echo Attempting to set the time on the device
     run_adb wait-for-device
-    run_adb shell toolbox date `date +%s`
+    run_adb shell toolbox date $SETTIME
     run_adb shell setprop persist.sys.timezone ${TIMEZONE}
 }
 
@@ -300,6 +309,9 @@ while getopts :apbdsfkirnh opt; do
     ;;
     p)
     Reset_Flag=""
+    ;;
+    e)
+    HomeButton=1
     ;;
     *)
     ;;

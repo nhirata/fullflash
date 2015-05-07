@@ -175,7 +175,8 @@ function adb_push_gaia() {
 
 function resetphone()
 {
-run_adb shell mkdir /cache/recovery &&
+run_adb shell rm -r /cache/* &&
+run_adb shell mkdir /cache/recovery > /dev/null &&
 run_adb shell 'echo "--wipe_data" > /cache/recovery/command' &&
 run_adb reboot recovery
 }

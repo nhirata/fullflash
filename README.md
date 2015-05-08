@@ -21,4 +21,13 @@ The following are options :
 + -r : restore after flashing
 + -k : keep previous profile; backup and restore options
 + -p : do not reset phone
-+ -a : do not turn on adb remote debugging" 
++ -a : do not turn on adb remote debugging"
+
+
+multifullflash
+=============
+place this file in the b2g-distro folder of the build that you are flashing.
+make sure that it has executable rights ( chmod +x multifullflash )
+place devices in fastboot mode ( turn off, hold volume up, plug in, should see blue light for aries )
+once you have all the devices in fastboot mode, run the script ./multifullflash
+ 
